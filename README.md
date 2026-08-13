@@ -1,5 +1,6 @@
 # Cloud Computing Laboratory
 
-Student Name:
-Student ID:
-Class:
+Student Name: Tien
+Student ID:236306
+Class:DH23Tin07
+
