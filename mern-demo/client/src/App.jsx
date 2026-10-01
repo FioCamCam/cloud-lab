@@ -154,7 +154,7 @@ function App() {
 
   return (
     <div>
-      <h1>Quản lý sinh viên</h1>
+      <h1>Quản lý sinh viên - Version 2.0</h1>
 
       <h2>{editingId ? 'Cập nhật sinh viên' : 'Thêm sinh viên'}</h2>
 
