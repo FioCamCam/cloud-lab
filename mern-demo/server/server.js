@@ -249,15 +249,23 @@ app.delete('/api/students/:id', async (req, res) => {
 });
 
 // ================================
-// KHỞI ĐỘNG SERVER
+// HEALTH CHECK
 // ================================
-// Quan trọng với Render:
-// phải bind server vào 0.0.0.0
-app.listen(PORT, '0.0.0.0', () => {
-    console.log(`Server is running on port ${PORT}`);
-    console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+app.get('/health', (req, res) => {
+    res.status(200).json({
+        status: 'UP',
+        timestamp: new Date(),
+        uptime: process.uptime()
+    });
 });
 
+// ================================
+// KHỞI ĐỘNG SERVER
+// ================================
+app.listen(PORT, '0.0.0.0', () => {
+    console.log(`Server is running on port ${PORT} - Buoi 6`);
+    console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+});
 // ================================
 // KẾT NỐI MONGODB ATLAS
 // ================================
