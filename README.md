@@ -1,6 +1,6 @@
 # Cloud Computing Laboratory
 
-Student Name: Tien
+Student Name: Nguyen Van Tien
 Student ID:236306
 Class:DH23Tin07
 
