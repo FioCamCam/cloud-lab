@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from 'react'
 
 function App() {
@@ -12,6 +13,9 @@ function App() {
   const [editingId, setEditingId] = useState(null)
 
   const loadStudents = () => {
+    setLoading(true)
+    setError('')
+
     fetch('/api/students')
       .then((response) => {
         if (!response.ok) {
@@ -34,95 +38,75 @@ function App() {
     loadStudents()
   }, [])
 
-  // Thêm hoặc cập nhật sinh viên
-  const handleSubmit = (event) => {
-    event.preventDefault()
-
-    if (editingId) {
-      // Cập nhật sinh viên
-      fetch(`/api/students/${editingId}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          studentId: studentId,
-          name: name,
-          email: email
-        })
-      })
-        .then((response) => {
-          if (!response.ok) {
-            throw new Error('Không thể cập nhật sinh viên')
-          }
-
-          return response.json()
-        })
-        .then(() => {
-          alert('Cập nhật sinh viên thành công!')
-
-          setStudentId('')
-          setName('')
-          setEmail('')
-          setEditingId(null)
-
-          loadStudents()
-        })
-        .catch((error) => {
-          alert(error.message)
-        })
-    } else {
-      // Thêm sinh viên
-      fetch('/api/students', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          studentId: studentId,
-          name: name,
-          email: email
-        })
-      })
-        .then((response) => {
-          if (!response.ok) {
-            throw new Error('Không thể thêm sinh viên')
-          }
-
-          return response.json()
-        })
-        .then(() => {
-          alert('Thêm sinh viên thành công!')
-
-          setStudentId('')
-          setName('')
-          setEmail('')
-
-          loadStudents()
-        })
-        .catch((error) => {
-          alert(error.message)
-        })
-    }
-  }
-
-  // Chọn sinh viên để sửa
-  const handleEdit = (student) => {
-    setEditingId(student._id)
-    setStudentId(student.studentId)
-    setName(student.name)
-    setEmail(student.email)
-  }
-
-  // Hủy sửa
-  const handleCancelEdit = () => {
-    setEditingId(null)
+  const resetForm = () => {
     setStudentId('')
     setName('')
     setEmail('')
+    setEditingId(null)
   }
 
-  // Xóa sinh viên
+  const handleSubmit = (event) => {
+    event.preventDefault()
+
+    const isEditing = editingId !== null
+    const url = isEditing
+      ? `/api/students/${editingId}`
+      : '/api/students'
+
+    const method = isEditing ? 'PUT' : 'POST'
+
+    fetch(url, {
+      method,
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        studentId,
+        name,
+        email
+      })
+    })
+      .then(async (response) => {
+        const data = await response.json().catch(() => ({}))
+
+        if (!response.ok) {
+          throw new Error(
+            data.message ||
+            data.error ||
+            (isEditing
+              ? 'Không thể cập nhật sinh viên'
+              : 'Không thể thêm sinh viên')
+          )
+        }
+
+        return data
+      })
+      .then(() => {
+        alert(
+          isEditing
+            ? 'Cập nhật sinh viên thành công!'
+            : 'Thêm sinh viên thành công!'
+        )
+
+        resetForm()
+        loadStudents()
+      })
+      .catch((error) => {
+        alert(error.message)
+      })
+  }
+
+  const handleEdit = (student) => {
+    setEditingId(student._id)
+    setStudentId(student.studentId || '')
+    setName(student.name || '')
+    setEmail(student.email || '')
+  }
+
+  const handleCancelEdit = () => {
+    resetForm()
+  }
+
   const handleDelete = (id) => {
     const confirmDelete = window.confirm(
       'Bạn có chắc chắn muốn xóa sinh viên này không?'
@@ -135,16 +119,19 @@ function App() {
     fetch(`/api/students/${id}`, {
       method: 'DELETE'
     })
-      .then((response) => {
+      .then(async (response) => {
+        const data = await response.json().catch(() => ({}))
+
         if (!response.ok) {
-          throw new Error('Không thể xóa sinh viên')
+          throw new Error(
+            data.message || data.error || 'Không thể xóa sinh viên'
+          )
         }
 
-        return response.json()
+        return data
       })
       .then(() => {
         alert('Xóa sinh viên thành công!')
-
         loadStudents()
       })
       .catch((error) => {
@@ -156,12 +143,11 @@ function App() {
     <div>
       <h1>Quản lý sinh viên - Version 2.0</h1>
 
-      <h2>{editingId ? 'Cập nhật sinh viên' : 'Thêm sinh viên'}</h2>
+      <h2>{editingId !== null ? 'Cập nhật sinh viên' : 'Thêm sinh viên'}</h2>
 
       <form onSubmit={handleSubmit}>
         <div>
           <label>MSSV: </label>
-
           <input
             type="text"
             value={studentId}
@@ -175,7 +161,6 @@ function App() {
 
         <div>
           <label>Họ tên: </label>
-
           <input
             type="text"
             value={name}
@@ -189,7 +174,6 @@ function App() {
 
         <div>
           <label>Email: </label>
-
           <input
             type="email"
             value={email}
@@ -202,10 +186,10 @@ function App() {
         <br />
 
         <button type="submit">
-          {editingId ? 'Cập nhật sinh viên' : 'Thêm sinh viên'}
+          {editingId !== null ? 'Cập nhật sinh viên' : 'Thêm sinh viên'}
         </button>
 
-        {editingId && (
+        {editingId !== null && (
           <button type="button" onClick={handleCancelEdit}>
             Hủy
           </button>
@@ -218,7 +202,13 @@ function App() {
 
       {loading && <p>Đang tải dữ liệu...</p>}
 
-      {error && <p>{error}</p>}
+      {error && (
+        <p style={{ color: 'red' }}>
+          {error}
+          {' '}
+          <button onClick={loadStudents}>Thử lại</button>
+        </p>
+      )}
 
       {!loading && !error && (
         <table border="1" cellPadding="10">
@@ -250,6 +240,12 @@ function App() {
                 </td>
               </tr>
             ))}
+
+            {students.length === 0 && (
+              <tr>
+                <td colSpan="4">Chưa có sinh viên nào.</td>
+              </tr>
+            )}
           </tbody>
         </table>
       )}

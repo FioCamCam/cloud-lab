@@ -1,3 +1,4 @@
+
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
@@ -22,18 +23,15 @@ const allowedOrigins = [
 app.use(
     cors({
         origin: function (origin, callback) {
-            // Cho phép request không có origin
-            // Ví dụ: curl, Postman
             if (!origin) {
                 return callback(null, true);
             }
 
-            // Cho phép các origin đã cấu hình
             if (allowedOrigins.includes(origin)) {
                 return callback(null, true);
             }
 
-            // Trong quá trình học có thể cho phép tạm thời
+            // Cho phép tất cả origin trong môi trường thực hành
             callback(null, true);
         },
         credentials: true
@@ -49,7 +47,7 @@ app.use(express.json());
 // ROUTE KIỂM TRA SERVER
 // ================================
 app.get('/', (req, res) => {
-    res.json({
+    res.status(200).json({
         message: 'MERN Backend is running!'
     });
 });
@@ -58,7 +56,7 @@ app.get('/', (req, res) => {
 // API HELLO
 // ================================
 app.get('/api/hello', (req, res) => {
-    res.json({
+    res.status(200).json({
         message: 'Backend is running!'
     });
 });
@@ -74,13 +72,11 @@ const studentSchema = new mongoose.Schema(
             unique: true,
             trim: true
         },
-
         name: {
             type: String,
             required: true,
             trim: true
         },
-
         email: {
             type: String,
             required: true,
@@ -145,17 +141,13 @@ app.post('/api/students', async (req, res) => {
     try {
         const { studentId, name, email } = req.body;
 
-        // Kiểm tra dữ liệu
         if (!studentId || !name || !email) {
             return res.status(400).json({
                 message: 'Vui lòng nhập đầy đủ MSSV, họ tên và email'
             });
         }
 
-        // Kiểm tra MSSV đã tồn tại
-        const existingStudent = await Student.findOne({
-            studentId: studentId
-        });
+        const existingStudent = await Student.findOne({ studentId });
 
         if (existingStudent) {
             return res.status(409).json({
@@ -163,7 +155,6 @@ app.post('/api/students', async (req, res) => {
             });
         }
 
-        // Tạo sinh viên mới
         const student = new Student({
             studentId,
             name,
@@ -192,10 +183,7 @@ app.put('/api/students/:id', async (req, res) => {
 
         const student = await Student.findByIdAndUpdate(
             req.params.id,
-            {
-                name,
-                email
-            },
+            { name, email },
             {
                 new: true,
                 runValidators: true
@@ -209,7 +197,6 @@ app.put('/api/students/:id', async (req, res) => {
         }
 
         res.status(200).json(student);
-
     } catch (error) {
         console.error('PUT /api/students/:id error:', error);
 
@@ -235,9 +222,8 @@ app.delete('/api/students/:id', async (req, res) => {
 
         res.status(200).json({
             message: 'Xóa sinh viên thành công',
-            student: student
+            student
         });
-
     } catch (error) {
         console.error('DELETE /api/students/:id error:', error);
 
@@ -260,12 +246,17 @@ app.get('/health', (req, res) => {
 });
 
 // ================================
-// KHỞI ĐỘNG SERVER
+// GHI LOG ĐƯỜNG DẪN KHÔNG TỒN TẠI
 // ================================
-app.listen(PORT, '0.0.0.0', () => {
-    console.log(`Server is running on port ${PORT} - Buoi 6`);
-    console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+app.use((req, res) => {
+    console.log(`[404] ${req.method} ${req.originalUrl}`);
+
+    res.status(404).json({
+        message: 'Route not found',
+        path: req.originalUrl
+    });
 });
+
 // ================================
 // KẾT NỐI MONGODB ATLAS
 // ================================
@@ -280,10 +271,7 @@ if (!MONGODB_URI) {
             console.log('Đã kết nối thành công với MongoDB Atlas!');
         })
         .catch((error) => {
-            console.error(
-                'MongoDB connection error:',
-                error.message
-            );
+            console.error('MongoDB connection error:', error.message);
         });
 }
 
@@ -296,4 +284,12 @@ process.on('unhandledRejection', (error) => {
 
 process.on('uncaughtException', (error) => {
     console.error('Uncaught Exception:', error);
+});
+
+// ================================
+// KHỞI ĐỘNG SERVER
+// ================================
+app.listen(PORT, '0.0.0.0', () => {
+    console.log(`Server is running on port ${PORT} - Buoi 6`);
+    console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
 });
